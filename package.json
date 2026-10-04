@@ -1,0 +1,24 @@
+{
+  "name": "yakthung-utils",
+  "version": "0.0.1",
+  "description": "Foundational open-source utilities for the Limbu (Yakthung) language and Sirijunga script supporting intelligent fallbacks and multi-script handling.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "limbu",
+    "yakthung",
+    "sirijunga",
+    "kirat",
+    "nepal",
+    "unicode",
+    "transliteration"
+  ],
+  "author": "Ningsang Jabegu (ᤏᤡᤅᤚᤠ᤺ᤅ ᤈᤘᤣ᤺ᤃᤢ)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
