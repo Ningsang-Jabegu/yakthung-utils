@@ -1,57 +1,72 @@
 # yakthung-utils (ᤕᤠᤰᤌᤱ-ᤕᤢᤋᤡ᤺ᤸᤛ)
 
-A lightweight open-source utility suite for the **Yakthung (Limbu) language** and **Sirijunga script**. It provides controlled conversion between Devanagari and native Limbu Unicode characters, with explicit handling for vowels, final consonants, subjoints, nasalization, punctuation, numbers, and Unicode edge cases.
+_First updated: October 12, 2026_
 
-> **Development status:** The conversion engine has undergone extensive function-by-function testing. Before declaring a `1.0.0` production release, the mapping matrix should receive a final independent linguistic audit and the packed npm artifact should be tested in a clean installation.
+`yakthung-utils` is a JavaScript utility package for converting text between Devanagari and the Sirijanga script used for Yakthung (Limbu). It uses explicit mapping and context-sensitive parsing rules for consonants, vowels, conjuncts, final letters, nasalization, punctuation, and numerals.
+
+The package is a script-conversion utility. Passing its tests means that the code matches the expected test cases; it does not, by itself, establish that every mapping is linguistically correct for every Yakthung dialect or orthographic practice.
 
 ## परिचय
 
-यो देवनागरी र रैथाने सिरिजङ्गा (लिम्बु) लिपिबीच सुरक्षित रूपान्तरण गर्न तथा Yakthung भाषा–लिपि सम्बन्धी डिजिटल उपकरण विकास गर्न बनाइएको हलुका Utility Library हो।
+यो देवनागरी र सिरिजङ्गा लिपिबीच पाठ रूपान्तरण गर्न बनाइएको JavaScript utility package हो। यसको mapping र conversion नियमहरू परीक्षणमार्फत जाँचिन्छन्। सबै शब्द, बोली वा हिज्जेका लागि रूपान्तरण पूर्ण रूपमा मिल्छ भन्ने यसको दाबी होइन।
 
----
+## Features
 
-## Features (विशेषताहरू)
+- Convert text from Devanagari to Sirijanga and from Sirijanga to Devanagari.
+- Handle consonants, dependent vowel signs, subjoints, and small/final letters.
+- Apply Kemphreng (`᤺`) for the vowel combinations covered by the mapping rules.
+- Convert Arabic and Devanagari digits to Limbu digits.
+- Handle nasalization, selected punctuation, and Limbu Sign Loo (`᥀`).
+- Define fallback behavior for selected Devanagari characters that do not have a direct one-to-one mapping.
+- Test expected output and Unicode code points with dedicated test files and manually maintained fixtures.
 
-* 🔀 **Bi-directional Transliteration:** Converts text between Devanagari ↔ Sirijunga/Limbu script.
-* 🧩 **Context-aware parsing:** Handles consonants, dependent vowels, medial subjoints, final/small letters, and Sa-i according to the package's mapping rules.
-* 🔤 **Vowel-length handling:** Distinguishes short and long `ि/ी` and `ु/ू` through Limbu vowel signs and **Kemphreng (`᤺`)** where required.
-* 🔄 **Round-trip testing:** Tests Devanagari → Limbu → Devanagari and Limbu → Devanagari → Limbu separately.
-* 🔢 **Numeral localization:** Supports Arabic and Devanagari digits and converts them to native Limbu digits.
-* 🧠 **Fallback handling:** Provides controlled behavior for Devanagari characters that do not have a one-to-one Limbu representation.
-* 📝 **Nasalization handling:** Maps Devanagari `ं` and `ँ` to Limbu nasalization and documents the resulting normalization.
-* ❗ **Special punctuation handling:** Preserves Devanagari `।` and `॥` exactly and handles Limbu Sign Loo `᥀` separately from ordinary vowel/consonant conversion.
-* 🧪 **Unicode integrity testing:** Checks exact Unicode code points, replacement characters, surrogate corruption, and normalization stability.
-* 🗂️ **Golden test fixtures:** Maintains manually verified expected outputs independently from the conversion engine.
+## Version history
 
----
+### `0.0.1` — initial tested baseline
 
-## Installation (स्थापना विधि)
+The `0.0.1` baseline had 13 test suites and 913 passing tests. Those tests provided a starting point, but further testing exposed cases that needed more precise handling. The version number describes the package baseline, not a claim that all linguistic and round-trip edge cases had been solved.
 
-Install the package via npm:
+Issues identified during follow-up validation included:
+
+- **Incomplete independent-vowel coverage:** Testing identified missing or incomplete mappings for Devanagari independent vowels from आ through अः, which prompted further mapping work in 0.0.2.
+
+- **Long and short vowels:** `कि` and `की`, and `कु` and `कू`, could collapse to the same output, making the original distinction impossible to recover.
+- **Over-applying Kemphreng:** a broad vowel-length rule could append `᤺` to forms such as `का`, where the expected output was `ᤁᤠ`.
+- **Conjunct parsing:** `ज्ञ` and `त्र` needed explicit matching before the general consonant/halanta logic. They consist of three Devanagari code points each, not two.
+- **Digit conversion in reverse:** reverse conversion needed explicit mappings from Limbu digits to Devanagari digits.
+- **Round-trip interpretation:** some mappings are intentionally normalized or lossy, so an output that differs from the original input is not always an implementation failure.
+
+These were validation findings, not a reason to describe every conversion in `0.0.1` as broken. See the examples below for the behavior and limitations.
+
+### `0.0.2` — targeted fixes and expanded tests
+
+Version `0.0.2` addresses the specific conversion cases above and adds further test coverage. The changes include:
+
+- Expanded the conversion mappings and tests for Devanagari independent vowels from आ through अः, addressing gaps identified in 0.0.1.
+- More selective handling of Kemphreng so it is not added indiscriminately to every long Devanagari vowel.
+- Explicit handling for `ज्ञ` and `त्र` before generic consonant and halanta processing.
+- Reverse mapping for Limbu numerals `᥆`–`᥏` to Devanagari digits `०`–`९`.
+- Additional real-word, regression, and numeral-related tests.
+- Continued checks for punctuation, combining marks, fallback behavior, and Unicode integrity.
+
+The current local test suite has passed after these changes. The total number of tests in `0.0.2` is not stated here because it should be taken from the actual final test run immediately before publishing.
+
+## Installation
 
 ```bash
 npm install yakthung-utils
 ```
 
-For development/testing from the repository:
+For development from the repository:
 
 ```bash
 npm install
+npm test
 ```
 
-The package uses ES Modules. Ensure the project configuration is compatible with:
+The package uses ES modules. If you are using it in a project that does not already support ES modules, check your project's Node.js and `package.json` configuration.
 
-```json
-{
-  "type": "module"
-}
-```
-
----
-
-## Usage Guide (प्रयोग गर्ने तरिका)
-
-### 1. Basic Conversion
+## Usage
 
 ```javascript
 import {
@@ -60,708 +75,180 @@ import {
   convertToLimbuDigits,
 } from "yakthung-utils";
 
-// Devanagari → Limbu
-const limbuText = devanagariToLimbu("खेमा");
-console.log(limbuText);
+const sirijanga = devanagariToLimbu("खेमा");
+console.log(sirijanga);
 
-// Limbu → Devanagari
-const devaText = limbuToDevanagari("ᤁᤡᤖᤡᤋᤡ");
-console.log(devaText);
+const devanagari = limbuToDevanagari("ᤁᤡᤖᤡᤋᤡ");
+console.log(devanagari);
 
-// Numbers
 console.log(convertToLimbuDigits(2026));
 // ᥈᥆᥈᥌
 ```
 
----
+Use the exact exported function names and package version available in the release you install.
 
-# Technical Insights & Edge-Case Handling
+## Examples and version-specific behavior
 
-## (प्राविधिक चुनौती र समाधान)
+### Vowel length
 
-Building this package exposed several structural differences between Devanagari and Sirijunga. The following rules are now explicitly represented in the implementation and test suite.
-
-### 1. Preventing Cross-Script Halanta Leakage
-
-**The Challenge:**
-Devanagari uses the halanta/virama `्` to suppress the inherent vowel of consonants. Sirijunga does not use that character directly as a general Devanagari-style virama. Allowing `्` to leak into generated Limbu text can create mixed-script output and rendering problems such as dotted-circle sequences.
-
-**The Resolution:**
-The parser handles a Devanagari consonant followed by `्` contextually:
-
-1. Check whether the consonant has a native Limbu small/final-letter representation.
-2. If it does, use that native final letter.
-3. Otherwise, use the full Limbu consonant followed by **Sa-i (`᤻`, U+193B)**.
-4. Subjoint combinations such as `्य`, `्र`, and `्व` are handled separately.
-5. A standalone/unhandled halanta is prevented from leaking into normal Limbu output.
-
-Examples:
+The intended behavior covered by the current tests is:
 
 ```text
-त् → ᤳ
-प् → ᤵ
-म् → ᤶ
-र् → ᤷ
-ल् → ᤸ
-
-स् → ᤛ᤻
-ष् → ᤚ᤻
-श् → ᤙ᤻
-ह् → ᤜ᤻
+Input     Sirijanga
+कि        ᤁᤡ
+की        ᤁᤡ᤺
+कु        ᤁᤢ
+कू        ᤁᤢ᤺
+का        ᤁᤠ
+के        ᤁᤣ
+कै        ᤁᤤ
+को        ᤁᤥ
+कौ        ᤁᤦ
 ```
 
-**Important:** `᤻` is treated as **Sa-i**, not as a universal replacement for the Devanagari virama.
+In the `0.0.1` baseline, testing exposed two relevant issues: short and long `ि/ी` or `ु/ू` could become indistinguishable, and a broad rule could incorrectly produce `का → ᤁᤠ᤺`. In `0.0.2`, the rules are more selective: the expected `की` and `कू` outputs include Kemphreng, while `का` does not.
 
----
-
-### 2. Sa-i (`᤻`) Is Not a General Virama
-
-**The Problem:**
-During development, `᤻` and `᤹` were initially easy to confuse because both are combining marks in the Limbu Unicode block.
-
-**The Resolution:**
-The implementation now treats:
+### Special conjuncts
 
 ```text
-᤹ = U+1939
-᤺ = U+193A
-᤻ = U+193B
+Input     Sirijanga
+ज्ञ        ᤝ
+त्र        ᤞ
 ```
 
-as distinct characters with distinct roles.
+In `0.0.2`, these conjuncts are checked before the generic consonant-plus-halanta logic. Each visible conjunct contains three Devanagari code points, so the parser must consume all three. This targeted rule should not change unrelated combinations such as `क्र`, whose expected output remains `ᤁᤪ`.
 
-The package's conversion rules must therefore not assume that every Devanagari `्` corresponds to the same Limbu character in every context.
-
-This distinction is covered by the dedicated test suite and Unicode-integrity tests.
-
----
-
-### 3. Multi-Script Vowel Asymmetry
-
-**The Challenge:**
-Devanagari distinguishes short and long vowel forms explicitly:
+### Numerals
 
 ```text
-ि / ी
-ु / ू
+Arabic digits       Limbu digits
+2026                ᥈᥆᥈᥌
+
+Devanagari digits    Limbu digits
+२०२६                ᥈᥆᥈᥌
 ```
 
-while Limbu vowel representation uses its own vowel-sign system and can additionally use **Kemphreng (`᤺`, U+193A)** as a vowel-length marker.
+The `0.0.2` test coverage includes conversion of Arabic and Devanagari digits to Limbu digits, and reverse conversion of Limbu digits `᥆`–`᥏` to Devanagari digits `०`–`९`.
 
-**The Resolution:**
-The conversion logic was changed from a blanket “long vowel = add Kemphreng” rule to a more specific rule.
+### Fallbacks are not always reversible
 
-Current verified behavior:
+Some Devanagari characters do not have a distinct one-to-one mapping in the current table. For example:
 
 ```text
-कि → ᤁᤡ
-की → ᤁᤡ᤺
-
-कु → ᤁᤢ
-कू → ᤁᤢ᤺
+इटा → ᤀᤡᤋᤠ → इता
 ```
 
-The other vowel signs have their own Limbu representations:
+In this case, `ट` uses a fallback that converts back as `त`. The output is therefore lossy: the original spelling `इटा` cannot be reconstructed from the Sirijanga output alone. This is a known mapping limitation, not a lossless round trip.
 
-```text
-का → ᤁᤠ
-के → ᤁᤣ
-कै → ᤁᤤ
-को → ᤁᤥ
-कौ → ᤁᤦ
-```
+### Nasalization normalization
 
-Therefore **Kemphreng must not be blindly appended to every Devanagari long vowel**.
-
-This was one of the major bugs discovered during round-trip testing.
-
----
-
-### 4. Kemphreng Edge Cases
-
-The package must distinguish:
-
-```text
-᤺ = U+193A Kemphreng
-```
-
-from:
-
-```text
-᤹ = U+1939 Mukphreng
-᤻ = U+193B Sa-i
-```
-
-The test suite specifically checks cases involving:
-
-```text
-ᤁᤡ᤺
-ᤁᤢ᤺
-ᤁᤠ
-᤺
-ᤠ᤺
-```
-
-The important implementation principle is that Kemphreng is interpreted according to its position and surrounding vowel rather than being treated as an independent ordinary vowel sign.
-
----
-
-### 5. Nasalization Normalization
-
-**The Challenge:**
-Devanagari distinguishes:
-
-```text
-ं  Anusvara
-ँ  Chandrabindu
-```
-
-but the current Limbu conversion maps both to the same Limbu nasalization character:
-
-```text
-ं → ᤱ
-ँ → ᤱ
-```
-
-Therefore the original distinction cannot always be recovered during reverse conversion.
-
-For example:
+The current mapping converts both Devanagari anusvara (`ं`) and chandrabindu (`ँ`) to the same Limbu nasalization character:
 
 ```text
 कं → ᤁᤱ → कं
 कँ → ᤁᤱ → कं
 ```
 
-This is an **intentional normalization**, not a failed round trip.
+The original distinction between `ं` and `ँ` is therefore not preserved in the second example. Tests should classify this as normalization rather than exact round-trip preservation.
 
-Consequently, round-trip tests classify these cases as normalized/lossy rather than pretending that the original Devanagari spelling can always be reconstructed.
+### Punctuation
 
----
-
-### 6. Devanagari Danda Preservation
-
-A serious punctuation collision was discovered during round-trip testing.
-
-The required behavior is:
+The Devanagari danda and double danda should be preserved as separate characters:
 
 ```text
 ।  → ।
 ॥ → ॥
 ```
 
-Both characters must remain exactly themselves.
+Their code points are U+0964 and U+0965 respectively. They must not be collapsed into one another by a generic sign mapping.
 
-They must **not** be collapsed into one another through the generic sign mapping.
+### Limbu Sign Loo
 
-The implementation therefore handles:
+The Limbu Sign Loo is `᥀` (U+1940). The package has special handling for this sign; do not assume that it behaves like an ordinary consonant or vowel mapping. Check the current implementation and tests for the exact accepted input forms and reverse-conversion behavior.
 
-```text
-।  U+0964
-॥ U+0965
-```
+## How conversion works
 
-as explicitly preserved Devanagari punctuation.
+The conversion code applies mapping rules in a specific order. This matters because some sequences need to be recognized before their individual characters:
 
-This prevents:
+1. Special conjuncts such as `ज्ञ` and `त्र`.
+2. Independent vowels and consonant mappings.
+3. Dependent vowel signs and vowel-length handling.
+4. Halanta, subjoints, and small/final-letter cases.
+5. Nasalization, punctuation, numerals, and selected special signs.
+6. Fallback handling for supported characters without a direct mapping.
 
-```text
-॥ → । 
-```
+This is a high-level description. The exact processing order is defined by the source code and may change as the implementation develops.
 
-from occurring during reverse conversion.
+## Unicode details
 
----
-
-### 7. Limbu Sign Loo (`᥀`)
-
-`᥀` is handled as a special case rather than being forced through the ordinary one-character `SIGNS` lookup.
-
-The package currently supports:
+The Sirijanga/Limbu characters used by the package are in the Unicode Limbu block, U+1900–U+194F. The code and tests distinguish these combining characters:
 
 ```text
-लो → ᤗᤥ
-लो! → ᥀
-लो! (punctuation mark) → ᥀
+᤹  U+1939  Mukphreng
+᤺  U+193A  Kemphreng
+᤻  U+193B  Sa-i
+᥀  U+1940  Limbu Sign Loo
 ```
 
-and reverse conversion:
+Unicode tests are useful for catching replacement characters, invalid UTF-16 sequences, unexpected combining-mark changes, and punctuation collisions. They do not replace linguistic review.
 
-```text
-᥀ → लो! (punctuation mark)
+## Testing
+
+Run the repository's test suite with:
+
+```bash
+npm test
 ```
 
-The explanatory text is therefore intentionally handled before ordinary character-by-character parsing.
+Individual test files can also be run directly with Node.js, for example:
 
----
-
-### 8. Retroflex / Fallback Characters
-
-Some Devanagari inputs may not have a direct one-to-one representation in the current Limbu mapping matrix.
-
-The package therefore contains fallback mappings for selected non-native or alternate Devanagari forms.
-
-These mappings should be understood as **conversion/fallback rules**, not as proof that the original Devanagari phoneme and the resulting Yakthung representation are linguistically identical.
-
-This distinction is important because:
-
-```text
-source character
-      ↓
-fallback mapping
-      ↓
-native Limbu representation
-      ↓
-reverse conversion
+```bash
+node tests/03-consonants.test.js
+node tests/05-subjoints.test.js
+node tests/15-real-world-nepali-words.test.js
 ```
 
-may not be lossless.
+Test names and suite numbers may change as coverage grows. Expected values should be independently reviewed rather than generated automatically by the conversion function being tested. Otherwise, the same bug can appear in both the implementation and its expected output.
 
-Therefore fallback cases belong in their own tests and should not automatically be classified as lossless round trips.
+A passing test suite shows that the current code matches its defined expectations. It does not prove that every mapping is correct for all Yakthung words, dialects, or orthographic conventions. Community and linguistic review remains important.
 
----
+## Known limitations
 
-# Testing Architecture (परीक्षण संरचना)
+- Some mappings are fallbacks rather than one-to-one equivalents.
+- Nasalization can be normalized, so the source distinction may be lost.
+- A successful round trip does not necessarily establish linguistic correctness.
+- Dialect, spelling, and orthographic conventions may differ.
+- Unsupported or newly encountered Unicode sequences may not convert as expected.
+- Not every possible conjunct or word form is necessarily represented.
 
-The package was developed with independent tests for different classes of behavior.
+Please report reproducible examples with the input, actual output, expected output, and the relevant script or spelling convention. That makes it possible to distinguish a code defect from a mapping decision that needs linguistic review.
 
-```text
-tests/
-├── 01-script-detection.test.js
-├── 02-numbers.test.js
-├── 03-consonants.test.js
-├── 04-vowels.test.js
-├── 05-subjoints.test.js
-├── 06-small-letters.test.js
-├── 07-kemphreng.test.js
-├── 08-mukphreng.test.js
-├── 09-nasalization.test.js
-├── 10-punctuation.test.js
-├── 11-fallbacks.test.js
-├── 12-roundtrip.test.js
-├── 13-unicode-integrity.test.js
-└── fixtures/
-    └── golden-cases.js
-```
+## Project structure
 
-Each test isolates a particular part of the conversion engine instead of relying only on a large end-to-end test.
+The repository separates mapping data, conversion logic, and tests. The mapping table defines supported character relationships; the conversion functions apply those mappings with contextual rules; tests check expected results and regressions.
 
----
+The test fixtures are intended to remain independent of the converter. Change an expected value only after confirming that the new output is intended.
 
-## What We Discovered During Testing
+## License
 
-### Problem 1 — Long `ी` and `ू` were initially indistinguishable from short vowels
+This project is licensed under the MIT License. See `LICENSE` for the complete license text.
 
-Initially:
+Use, adaptation, and distribution of this software are welcome. If `yakthung-utils` helps your project, we kindly encourage you to acknowledge the package and link to its repository. Although attribution beyond the MIT License requirements is voluntary, every acknowledgment helps more people discover this work and creates opportunities for the Yakthung community to connect, collaborate, and contribute.
 
-```text
-कि → ᤁᤡ
-की → ᤁᤡ
-```
+## About
 
-This made the reverse conversion unable to distinguish:
+`yakthung-utils` is a community-oriented open-source project designed to make Devanagari–Sirijanga conversion easier to use in JavaScript applications.
 
-```text
-कि
-की
-```
+Its broader purpose is to support the digital preservation, documentation, and continued development of Yakthung language and cultural knowledge. By making useful tools accessible to developers, researchers, educators, and community members, we hope to help preserve language, traditions, rituals, and knowledge for future generations.
 
-The fix was to attach Kemphreng to long I and long U:
+We welcome contributions from everyone, especially those that improve the code, verify language mappings, document spelling and transliteration decisions, provide carefully reviewed examples, and share knowledge responsibly. Language and cultural knowledge are best supported when community members can participate, review, correct, and build upon one another's work.
 
-```text
-की → ᤁᤡ᤺
-कू → ᤁᤢ᤺
-```
+**If you use this package, please consider giving it credit.** A link in your README, documentation, acknowledgments, or project credits can help others find and contribute to this work.
 
----
+Project repository: https://github.com/Ningsang-Jabegu/yakthung-utils
 
-### Problem 2 — Kemphreng was incorrectly added to `ा`
+### A shared vision for cultural technology
 
-An overly broad long-vowel rule caused:
+We hope this project can inspire people from Yakthung and other cultural communities to develop and share open-source tools for their own languages, scripts, histories, traditions, and cultural practices. By working together, documenting knowledge carefully, and making tools accessible, communities can strengthen their digital presence and help future generations learn from the knowledge entrusted to them.
 
-```text
-का → ᤁᤠ᤺
-```
-
-instead of:
-
-```text
-का → ᤁᤠ
-```
-
-The rule was narrowed so that Kemphreng is not automatically appended to every long Devanagari vowel.
-
----
-
-### Problem 3 — Chandrabindu could not remain distinguishable
-
-Both:
-
-```text
-ं
-ँ
-```
-
-map to:
-
-```text
-ᤱ
-```
-
-Therefore:
-
-```text
-काँ → ᤁᤠᤱ → कां
-```
-
-is treated as normalization rather than an exact lossless round trip.
-
----
-
-### Problem 4 — `᥀` initially leaked explanatory text
-
-A conversion involving:
-
-```text
-लो! (punctuation mark)
-```
-
-could leave part of the description behind because the parser originally processed only the visible `लो!`.
-
-The solution was to detect the complete explanatory phrase before normal character processing.
-
----
-
-### Problem 5 — `।` and `॥` collided
-
-Both Devanagari punctuation characters were being treated through a conflicting sign mapping.
-
-The required behavior was clarified and implemented as exact preservation:
-
-```text
-। → ।
-॥ → ॥
-```
-
-This is now explicitly tested.
-
----
-
-### Problem 6 — Mukphreng, Kemphreng and Sa-i were confused
-
-The Unicode characters:
-
-```text
-᤹ U+1939
-᤺ U+193A
-᤻ U+193B
-```
-
-must not be treated as interchangeable.
-
-The Unicode-integrity tests now verify their exact code points independently of transliteration behavior.
-
----
-
-### Problem 7 — Expected values must not be generated by the converter itself
-
-A major testing principle established during development is:
-
-> **Never generate the expected test result using the same function being tested.**
-
-Otherwise, a wrong implementation can generate a wrong answer and then pass its own test.
-
-This led to the creation of:
-
-```text
-tests/fixtures/golden-cases.js
-```
-
-The golden fixtures contain manually established expected values and act as an independent regression reference.
-
----
-
-# Round-Trip Testing Philosophy
-
-Not every conversion can be expected to be perfectly reversible.
-
-The tests therefore distinguish three categories.
-
-### 1. Lossless
-
-The original text can be reconstructed exactly:
-
-```text
-A → Limbu → A
-```
-
-### 2. Normalized
-
-Different source representations intentionally collapse into one representation:
-
-```text
-कँ → ᤁᤱ → कं
-```
-
-### 3. Lossy
-
-The source contains information that the target representation cannot independently preserve.
-
-This distinction prevents the test suite from incorrectly treating an intentional linguistic/script normalization as a software bug.
-
----
-
-# Golden Cases
-
-`tests/fixtures/golden-cases.js` is the package's manually maintained **golden reference data**.
-
-It contains examples such as:
-
-```text
-क   → ᤁ
-की  → ᤁᤡ᤺
-कू  → ᤁᤢ᤺
-।   → ।
-॥  → ॥
-```
-
-The golden cases are intentionally independent from the implementation.
-
-Their purpose is to detect regressions when:
-
-* mappings are changed;
-* parser logic is refactored;
-* new fallback rules are added;
-* Unicode handling changes;
-* vowel logic changes;
-* punctuation handling changes.
-
-The golden fixture should therefore be updated **only after manually verifying that the new behavior is actually intended**.
-
----
-
-# Unicode Integrity
-
-The package uses the Limbu Unicode block:
-
-```text
-U+1900–U+194F
-```
-
-Unicode-integrity testing verifies:
-
-* exact code points;
-* absence of accidental `U+FFFD` replacement characters;
-* absence of invalid/unpaired UTF-16 surrogates;
-* stability of important Limbu sequences under NFC;
-* exact preservation of Devanagari danda characters;
-* integrity of mixed-script input.
-
-Examples:
-
-```text
-᤹ → U+1939
-᤺ → U+193A
-᤻ → U+193B
-᥀ → U+1940
-
-। → U+0964
-॥ → U+0965
-```
-
----
-
-# Known Limitations
-
-This package should not claim that every possible Devanagari spelling has a perfect one-to-one Yakthung equivalent.
-
-Potential limitations include:
-
-* dialectal differences;
-* multiple possible Devanagari spellings for the same Yakthung pronunciation;
-* information loss during fallback normalization;
-* differences between orthographic and phonetic representation;
-* ambiguous vowel-length representation;
-* nasalization normalization;
-* words containing unsupported or newly encountered Unicode sequences;
-* compound/conjunct forms not yet represented in the mapping matrix.
-
-The converter is therefore a **deterministic script utility**, not a complete natural-language transliteration engine.
-
----
-
-# Upcoming / Potential Future Errors
-
-As the package is expanded, the following classes of bugs are likely to require additional attention.
-
-## 1. New consonant collisions
-
-Adding new fallback forms may accidentally create duplicate Devanagari lookup keys.
-
-**Solution:**
-Add mapping-integrity tests that detect duplicate primary keys and unreachable mappings before release.
-
----
-
-## 2. New vowel combinations
-
-Additional combinations involving Kemphreng, Mukphreng, nasalization, or unusual vowel ordering may expose parser-order bugs.
-
-**Solution:**
-Add combination fixtures rather than testing only isolated vowels.
-
----
-
-## 3. Halanta + vowel sequences
-
-Inputs such as unusual sequences containing:
-
-```text
-consonant + ् + vowel
-```
-
-can produce unexpected output if parser precedence changes.
-
-**Solution:**
-Keep dedicated tests for:
-
-```text
-small/final letters
-subjoints
-Sa-i
-vowels
-```
-
-and test their combinations separately.
-
----
-
-## 4. Unicode normalization changes
-
-Future refactoring may accidentally alter combining-mark order.
-
-**Solution:**
-Keep Unicode-integrity tests and compare exact code-point sequences, not only visually rendered text.
-
----
-
-## 5. Unknown Unicode characters
-
-Users may provide characters outside the supported mappings.
-
-**Solution:**
-Define and test a clear policy for unsupported characters—preserve, normalize, or reject—and do not silently invent a transliteration.
-
----
-
-## 6. Round-trip false positives
-
-A conversion can technically round-trip while still being linguistically incorrect.
-
-**Solution:**
-Keep two separate concepts:
-
-```text
-Software correctness
-        +
-Linguistic correctness
-```
-
-Passing automated tests proves that the implementation follows the expected fixture rules; it does not by itself prove that every fixture represents correct Yakthung orthography.
-
----
-
-## 7. Golden fixture drift
-
-If developers change the converter and simply regenerate expected values, the golden tests lose their purpose.
-
-**Solution:**
-
-> Never regenerate golden expectations automatically from the implementation under test.
-
-Every changed golden value should be manually reviewed and justified.
-
----
-
-## 8. Version-to-version mapping changes
-
-Changing an existing mapping can alter users' output without changing the API.
-
-**Solution:**
-Treat mapping changes as potentially breaking changes and document them in the changelog. Use semantic versioning appropriately.
-
----
-
-# Development Verification Checklist
-
-Before declaring a release ready:
-
-```text
-[ ] 01 Script detection passes
-[ ] 02 Numbers pass
-[ ] 03 Consonants pass
-[ ] 04 Vowels pass
-[ ] 05 Subjoints pass
-[ ] 06 Small letters pass
-[ ] 07 Kemphreng passes
-[ ] 08 Mukphreng passes
-[ ] 09 Nasalization passes
-[ ] 10 Punctuation passes
-[ ] 11 Fallbacks pass
-[ ] 12 Round-trip passes
-[ ] 13 Unicode integrity passes
-
-[ ] Golden cases independently verified
-[ ] Mapping collisions checked
-[ ] Unsupported-character behavior documented
-[ ] README matches actual implementation
-[ ] npm package contents inspected
-[ ] npm pack --dry-run checked
-[ ] Packed package tested in a clean project
-[ ] Final linguistic audit completed
-```
-
----
-
-# Architecture of the Mapping Matrix
-
-The conversion engine separates processing into several logical layers:
-
-1. **Core Consonants** — primary Limbu consonant mappings.
-2. **Dependent Vowels** — Limbu vowel signs and length handling.
-3. **Subjoints** — medial combinations such as `ᤩ`, `ᤪ`, and `ᤫ`.
-4. **Small/Final Letters** — native terminal consonant representations.
-5. **Sa-i** — final-consonant vowel suppression.
-6. **Nasalization** — Limbu nasalization handling.
-7. **Signs and Punctuation** — special symbols such as `᥀` and preserved Devanagari punctuation.
-8. **Numbers** — native Limbu numerals.
-9. **Fallbacks** — controlled handling of unsupported/non-native Devanagari forms.
-
-This layered design is important because a single generic character lookup cannot correctly resolve all of these contexts.
-
----
-
-# Project Philosophy
-
-`yakthung-utils` is being developed with two principles:
-
-### 1. Never silently invent linguistic rules
-
-When a mapping is uncertain, it should be explicitly marked for verification rather than presented as established linguistic fact.
-
-### 2. Never let the implementation define its own truth
-
-The converter generates results.
-
-The **tests and independently verified golden fixtures define what those results are expected to be**.
-
----
-
-# License (लाइसेन्स)
-
-This project is open-source software licensed under the **MIT License**.
-
-Feel free to use, improve, and distribute it for the benefit of Yakthung language and Indigenous language technology ecosystems.
-
-## About the Project & Developer (परियोजना र विकासकर्ताको बारेमा)
-
-This package was envisioned and developed by a dedicated engineer from the Yakthung community to address the absolute lack of programmatic tools for the Sirijunga script in the modern npm ecosystem. While mainstream international organizations focused primarily on digital font rendering, this package introduces the first logic-heavy, context-aware transliteration parsing engine for developers. It serves as a digital bridge to protect, preserve, and scale the structural purity of the Limbu language across modern web apps, CLI diagnostics, and localization nodes.
+Technology alone cannot preserve a culture. It can, however, help communities document, teach, research, and pass on their knowledge—when that work is guided by the people whose language and culture it represents.

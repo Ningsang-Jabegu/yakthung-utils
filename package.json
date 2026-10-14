@@ -1,6 +1,6 @@
 {
   "name": "yakthung-utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Foundational open-source utilities for the Limbu (Yakthung) language and Sirijunga script supporting intelligent fallbacks and multi-script handling.",
   "main": "src/index.js",
   "type": "module",
@@ -16,9 +16,13 @@
     "unicode",
     "transliteration"
   ],
-  "author": "Ningsang Jabegu (ᤏᤡᤅᤚᤠ᤺ᤅ ᤈᤘᤣ᤺ᤃᤢ)",
+  "author": "Ningsang Jabegu (ᤏᤡᤱᤛᤠᤱ ᤈᤘᤣᤃᤢ)",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ningsang-Jabegu/yakthung-utils.git"
   }
 }

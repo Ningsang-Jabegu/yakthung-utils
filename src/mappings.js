@@ -69,6 +69,32 @@ export const NUMBER_MAP = {
   9: "᥏",
 };
 
+export const LIMBU_TO_DEVANAGARI_NUMBER_MAP = {
+  "᥆": "०",
+  "᥇": "१",
+  "᥈": "२",
+  "᥉": "३",
+  "᥊": "४",
+  "᥋": "५",
+  "᥌": "६",
+  "᥍": "७",
+  "᥎": "८",
+  "᥏": "९",
+};
+
+export const DEVANAGARI_NUMBER_MAP = {
+  "०": "᥆",
+  "१": "᥇",
+  "२": "᥈",
+  "३": "᥉",
+  "४": "᥊",
+  "५": "᥋",
+  "६": "᥌",
+  "७": "᥍",
+  "८": "᥎",
+  "९": "᥏",
+};
+
 /**
  * ============================================================================
  * 3. CORE CONSONANTS MATRIX
@@ -338,7 +364,7 @@ export const CONSONANTS = [
 
 /**
  * ============================================================================
- * 4. DEPENDENT VOWEL SIGNS MATRIX (VOWELS)
+ * 4A. DEPENDENT VOWEL SIGNS MATRIX (VOWELS)
  * ============================================================================
  * Addresses Many-to-One structural rules. Maps structural fields for default
  * (short/inherent) and long configurations.
@@ -420,6 +446,93 @@ export const VOWELS = [
     limbu: "ᤨ",
     code: "U+1928",
     hint: "Short/Open O",
+  },
+];
+
+/**
+ * ============================================================================
+ * 4B. INDEPENDENT DEVANAGARI VOWELS
+ * ============================================================================
+ *
+ * Devanagari has independent vowel letters.
+ * Modern Limbu/Sirijanga does not have equivalent independent vowel letters;
+ * syllable-initial vowels are represented using the U+1900 vowel carrier plus
+ * an appropriate vowel sign.
+ *
+ * These mappings are transliteration mappings and should not automatically be
+ * interpreted as proof of modern Yakthung orthographic usage.
+ */
+
+export const INDEPENDENT_VOWELS = [
+  {
+    devanagari: "अ",
+    limbu: "ᤀ",
+    code: "U+1900",
+    relation: "vowel-carrier",
+    hint: "Independent A / vowel carrier",
+  },
+  {
+    devanagari: "आ",
+    limbu: "ᤀᤠ",
+    code: "U+1900 U+1920",
+    relation: "carrier + vowel sign",
+    hint: "Independent AA",
+  },
+  {
+    devanagari: "इ",
+    limbu: "ᤀᤡ",
+    code: "U+1900 U+1921",
+    relation: "carrier + vowel sign",
+    hint: "Independent I",
+  },
+  {
+    devanagari: "ई",
+    limbu: "ᤀᤡ᤺",
+    code: "U+1900 U+1921 U+193A",
+    relation: "carrier + vowel sign + length",
+    hint: "Independent long I",
+  },
+  {
+    devanagari: "उ",
+    limbu: "ᤀᤢ",
+    code: "U+1900 U+1922",
+    relation: "carrier + vowel sign",
+    hint: "Independent U",
+  },
+  {
+    devanagari: "ऊ",
+    limbu: "ᤀᤢ᤺",
+    code: "U+1900 U+1922 U+193A",
+    relation: "carrier + vowel sign + length",
+    hint: "Independent long U",
+  },
+  {
+    devanagari: "ए",
+    limbu: "ᤀᤣ",
+    code: "U+1900 U+1923",
+    relation: "carrier + vowel sign",
+    hint: "Independent E",
+  },
+  {
+    devanagari: "ऐ",
+    limbu: "ᤀᤤ",
+    code: "U+1900 U+1924",
+    relation: "carrier + vowel sign",
+    hint: "Independent AI",
+  },
+  {
+    devanagari: "ओ",
+    limbu: "ᤀᤥ",
+    code: "U+1900 U+1925",
+    relation: "carrier + vowel sign",
+    hint: "Independent O",
+  },
+  {
+    devanagari: "औ",
+    limbu: "ᤀᤦ",
+    code: "U+1900 U+1926",
+    relation: "carrier + vowel sign",
+    hint: "Independent AU",
   },
 ];
 

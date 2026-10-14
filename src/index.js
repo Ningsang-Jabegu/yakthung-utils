@@ -13,10 +13,13 @@
 import {
   CONSONANTS,
   VOWELS,
+  INDEPENDENT_VOWELS,
   NUMBER_MAP,
   SMALL_LETTERS,
   SUBJOINTS,
   SIGNS,
+  DEVANAGARI_NUMBER_MAP,
+  LIMBU_TO_DEVANAGARI_NUMBER_MAP,
 } from "./mappings.js";
 
 /**
@@ -65,8 +68,10 @@ export function convertToLimbuDigits(input) {
  * @param {string} text
  * @returns {string}
  */
+
 export function devanagariToLimbu(text) {
   if (!text) return "";
+
   let result = "";
   let i = 0;
 
@@ -75,28 +80,49 @@ export function devanagariToLimbu(text) {
     let nextChar = text[i + 1];
     let nextNextChar = text[i + 2];
 
-    // १. नासिक्य ध्वनि व्यवस्थापन: देवनागरीको 'ं' (अनुस्वार) वा 'ँ' (चन्द्रबिन्दु) आएमा लिम्बुको 'ᤱ' (Small Nga) दिने
-    // 1. Nasikya Sound Management: If Devanagari's 'ं' (Anuswar) or 'ँ' (Chandrabindu) occurs, Limbu's 'ᤱ' (Small Nga) is given.
+    // Special conjuncts: match before generic consonant + halant handling.
+    // Each visible conjunct consists of three Devanagari code points.
+
+    if (text.slice(i, i + 3) === "ज्ञ") {
+      result += "ᤝ";
+      i += 3;
+      continue;
+    }
+
+    if (text.slice(i, i + 3) === "त्र") {
+      result += "ᤞ";
+      i += 3;
+      continue;
+    }
+
+    // ============================================================================
+    // INDEPENDENT DEVANAGARI VOWELS
+    // ============================================================================
+
+    const independentVowelMatch = INDEPENDENT_VOWELS.find(
+      (vowel) => vowel.devanagari === char,
+    );
+
+    if (independentVowelMatch) {
+      result += independentVowelMatch.limbu;
+      i++;
+      continue;
+    }
+
+    // ============================================================================
+    // NASALIZATION
+    // ============================================================================
+
     if (char === "ं" || char === "ँ") {
       result += "ᤱ";
       i++;
       continue;
     }
 
-    // २. विराम चिन्हहरू र विशेष संकेतहरू
-    // 2. Punctuation and Special Signs
+    // ============================================================================
+    // SPECIAL SIGN LOO
+    // ============================================================================
 
-    // Special Limbu Sign Loo.
-    //
-    // Limbu → Devanagari:
-    //   ᥀ → लो! (punctuation mark)
-    //
-    // Devanagari → Limbu:
-    //   लो! → ᥀
-    //   लो! (punctuation mark) → ᥀
-    //
-    // The parenthetical text is explanatory metadata only
-    // and must not become part of the Limbu output.
     const looWithDescription = "लो! (punctuation mark)";
 
     if (text.slice(i, i + looWithDescription.length) === looWithDescription) {
@@ -111,57 +137,73 @@ export function devanagariToLimbu(text) {
       continue;
     }
 
-    // Preserve Devanagari danda punctuation exactly.
+    // ============================================================================
+    // PUNCTUATION AND NUMBERS
+    // ============================================================================
+
     if (char === "।" || char === "॥") {
       result += char;
       i++;
       continue;
     }
 
+    if (Object.prototype.hasOwnProperty.call(DEVANAGARI_NUMBER_MAP, char)) {
+      result += DEVANAGARI_NUMBER_MAP[char];
+      i++;
+      continue;
+    }
+
     const signMatch = SIGNS.find((s) => s.devanagari === char);
+
     if (signMatch) {
       result += signMatch.limbu;
       i++;
       continue;
     }
 
-    // Explicit Devanagari compounds:
-    // ज्ञ = ज् + ञ → LIMBU LETTER GYAN (U+191D)
-    // त्र = त् + र → LIMBU LETTER TRA (U+191E)
+    // ============================================================================
+    // CONSONANT LOOKUP
+    // ============================================================================
 
-    if (text.slice(i, i + 3) === "ज्ञ") {
-      result += "ᤝ";
-      i += 3;
-      continue;
-    }
+    const currentConsonant = CONSONANTS.find(
+      (c) => c.devanagari === char || c.fallbackDeva.includes(char),
+    );
 
-    if (text.slice(i, i + 3) === "त्र") {
-      result += "ᤞ";
-      i += 3;
-      continue;
-    }
+    // ============================================================================
+    // CONTEXTUAL REPH: र् BEFORE A CONSONANT
+    // ============================================================================
+    //
+    // In this implementation, the reph in ऊर्जा is represented by
+    // the full Limbu Ra (ᤖ), not the small/final Ra (ᤷ).
+    //
+    // This rule must run before generic SMALL_LETTERS handling.
 
-    // ३. संयुक्त व्यञ्जन (ज्ञ, त्र जस्ता बहु-अक्षरी संयोजनहरू)
-    // 3. Compound consonants (multi-syllable combinations like ज्ञ, त्र)
-    const jointMatch = CONSONANTS.find((c) => c.devanagari === char + nextChar);
-    if (jointMatch) {
-      result += jointMatch.limbu;
+    if (
+      char === "र" &&
+      nextChar === "्" &&
+      nextNextChar &&
+      CONSONANTS.some(
+        (c) =>
+          c.devanagari === nextNextChar ||
+          c.fallbackDeva.includes(nextNextChar),
+      )
+    ) {
+      result += "ᤖ";
       i += 2;
       continue;
     }
 
-    // ४. सब-जोइन्ट अक्षरहरू (उप-जोर्नीहरू / मध्य भागहरू: ्स्त, ्य, ्र, ्व)
-    // 4. Sub-joint characters (Subjoints / Medials: ्स्त, ्य, ्र, ्व)
-    const currentConsonant = CONSONANTS.find(
-      (c) => c.devanagari === char || c.fallbackDeva.includes(char),
-    );
+    // ============================================================================
+    // CONSONANT + HALANT SEQUENCES
+    // ============================================================================
+
     if (currentConsonant && nextChar === "्") {
-      // क) यदि आधा अक्षर पछि य, र, व आएमा (Subjoints: ्य, ्र, ्व)
-      // a) If य, र, व follows a half-letter (Sub-joined forms: ्य, ्र, ्व)
+      // Handle subjoined y, r, and w.
       if (["य", "र", "व"].includes(nextNextChar)) {
         const subjointMatch = SUBJOINTS.find(
           (s) => s.devanagari === "्" + nextNextChar,
         );
+
         if (subjointMatch) {
           result += currentConsonant.limbu + subjointMatch.limbu;
           i += 3;
@@ -169,21 +211,12 @@ export function devanagariToLimbu(text) {
         }
       }
 
-      // ख) यदि जुनसुकै ठाउँमा (बिचमा वा अन्त्यमा) आधा अक्षर आएमा
-      //    -> Small Letters मा बदल्ने
-      // b) If a half-letter appears anywhere,
-      //    normalize fallback consonants to their native Devanagari equivalent
-      //    before checking SMALL_LETTERS.
-
       let smallLetterMatch = SMALL_LETTERS.find(
         (s) => s.devanagari === char + nextChar,
       );
 
-      // If the input consonant is a fallback form such as:
-      // ट् → त्
-      // ण् → न्
-      // first normalize it to the primary Devanagari consonant.
-      if (!smallLetterMatch && currentConsonant?.fallbackDeva?.includes(char)) {
+      // Normalize fallback consonants before looking up small letters.
+      if (!smallLetterMatch && currentConsonant.fallbackDeva?.includes(char)) {
         const fallbackSmallDevanagari = currentConsonant.devanagari + nextChar;
 
         smallLetterMatch = SMALL_LETTERS.find(
@@ -192,49 +225,41 @@ export function devanagariToLimbu(text) {
       }
 
       if (smallLetterMatch) {
-        // A native Limbu small/final letter exists.
         result += smallLetterMatch.limbu;
         i += 2;
         continue;
       }
 
-      // No native Limbu small/final letter exists.
-      //
-      // Use the full Limbu consonant + Sa-i (᤻).
-      //
-      // Examples:
-      // स् → ᤛ᤻
-      // ष् → ᤚ᤻
-      // श् → ᤙ᤻
-      // ह् → ᤜ᤻
-      //
-      // Sa-i is therefore used as the final-consonant marker
-      // when a dedicated Limbu small letter is unavailable.
+      // No dedicated small/final letter exists.
       result += currentConsonant.limbu + "᤻";
       i += 2;
       continue;
     }
 
-    // ५. एकल व्यञ्जन वर्ण
-    // 5. Single Consonant Characters
+    // ============================================================================
+    // SINGLE CONSONANTS
+    // ============================================================================
+
     if (currentConsonant) {
       result += currentConsonant.limbu;
       i++;
       continue;
     }
 
-    // ६. सामान्य एकल व्यञ्जन वर्ण (Core Consonants & Fallbacks: ट->त)
     const consonantMatch = CONSONANTS.find(
       (c) => c.devanagari === char || c.fallbackDeva.includes(char),
     );
+
     if (consonantMatch) {
       result += consonantMatch.limbu;
       i++;
       continue;
     }
 
-    // ७. स्वर वर्ण र मात्रा
-    // 7. Dependent Vowels
+    // ============================================================================
+    // DEPENDENT VOWEL SIGNS
+    // ============================================================================
+
     const vowelMatch = VOWELS.find(
       (v) => v.devanagari.default === char || v.devanagari.long === char,
     );
@@ -242,9 +267,6 @@ export function devanagariToLimbu(text) {
     if (vowelMatch) {
       result += vowelMatch.limbu;
 
-      // Long I requires Kemphreng.
-      // Other vowels with their own unique Limbu
-      // vowel signs do not automatically receive it.
       if (char === "ी" || char === "ू") {
         result += "᤺";
       }
@@ -253,7 +275,10 @@ export function devanagariToLimbu(text) {
       continue;
     }
 
-    // सुरक्षा कवच: यदि कुनै हलन्त यहाँ सम्म आइपुगेमा त्यसलाई सिधै हटाउने
+    // ============================================================================
+    // HALANT FALLBACK AND UNKNOWN CHARACTERS
+    // ============================================================================
+
     if (char === "्") {
       i++;
       continue;
@@ -275,6 +300,7 @@ export function devanagariToLimbu(text) {
 
 export function limbuToDevanagari(limbuText) {
   if (!limbuText) return "";
+
   let result = "";
   let i = 0;
 
@@ -282,23 +308,78 @@ export function limbuToDevanagari(limbuText) {
     let char = limbuText[i];
     let nextChar = limbuText[i + 1];
 
-    // 1. नासिक्य फलब्याक व्यवस्थापन: लिम्बुको 'ᤱ' (Small Nga) वा 'ᤲ' (Small Anusvara) आएमा देवनागरीको 'ं' (अनुस्वार) फर्काउने
+    // ============================================================================
+    // INDEPENDENT VOWEL SEQUENCES
+    // ============================================================================
+
+    // Historical/alternate O representation.
+    if (char === "ᤀ" && nextChar === "ᤨ") {
+      result += "ओ";
+      i += 2;
+      continue;
+    }
+
+    // Primary O representation.
+    if (char === "ᤀ" && nextChar === "ᤥ") {
+      result += "ओ";
+      i += 2;
+      continue;
+    }
+
+    // Match the longest configured independent-vowel sequence first.
+    const independentVowelMatch = INDEPENDENT_VOWELS.slice()
+      .sort((a, b) => b.limbu.length - a.limbu.length)
+      .find((vowel) => limbuText.startsWith(vowel.limbu, i));
+
+    if (independentVowelMatch) {
+      result += independentVowelMatch.devanagari;
+      i += independentVowelMatch.limbu.length;
+      continue;
+    }
+
+    // ============================================================================
+    // NASALIZATION
+    // ============================================================================
+
     if (char === "ᤱ" || char === "ᤲ") {
       result += "ं";
       i++;
       continue;
     }
 
-    // 2. व्यञ्जन वर्ण पहिचान र दन्त्य वर्ण फलब्याक (Consonants Lookup)
+    // ============================================================================
+    // REVERSE DIGIT MAPPING
+    // ============================================================================
+    //
+    // Example:
+    // ᥈᥆᥈᥌ → २०२६
+
+    if (
+      Object.prototype.hasOwnProperty.call(LIMBU_TO_DEVANAGARI_NUMBER_MAP, char)
+    ) {
+      result += LIMBU_TO_DEVANAGARI_NUMBER_MAP[char];
+      i++;
+      continue;
+    }
+
+    // ============================================================================
+    // CONSONANTS
+    // ============================================================================
+
     const consonantMatch = CONSONANTS.find((c) => c.limbu === char);
+
     if (consonantMatch) {
       result += consonantMatch.devanagari;
       i++;
       continue;
     }
 
-    // 3. स्वर मात्रा व्यवस्थापन (ह्रस्व र दीर्घको केम्फ्रेङ आधारित लजिक)
+    // ============================================================================
+    // DEPENDENT VOWEL SIGNS AND LENGTH
+    // ============================================================================
+
     const vowelMatch = VOWELS.find((v) => v.limbu === char);
+
     if (vowelMatch) {
       if (nextChar === "᤺") {
         result += vowelMatch.devanagari.long;
@@ -307,33 +388,44 @@ export function limbuToDevanagari(limbuText) {
         result += vowelMatch.devanagari.default;
         i++;
       }
+
       continue;
     }
 
-    // 4. सब-जोइन्ट (Medial / Half letters) पहिचान
+    // ============================================================================
+    // SUBJOINTS / MEDIALS
+    // ============================================================================
+
     const subjointMatch = SUBJOINTS.find((s) => s.limbu === char);
+
     if (subjointMatch) {
       result += subjointMatch.devanagari;
       i++;
       continue;
     }
 
-    // 5. साना आधा अक्षरहरू (Small Letters / Final Consonants)
+    // ============================================================================
+    // SMALL LETTERS / FINAL CONSONANTS
+    // ============================================================================
+
     const smallLetterMatch = SMALL_LETTERS.find((s) => s.limbu === char);
+
     if (smallLetterMatch) {
       result += smallLetterMatch.devanagari;
       i++;
       continue;
     }
 
-    // 6. विराम चिन्हहरू र विशेष संकेतहरू
+    // ============================================================================
+    // PUNCTUATION AND SPECIAL SIGNS
+    // ============================================================================
+
     if (limbuText === "᥀") {
       result += "लो! (punctuation mark)";
       i++;
       continue;
     }
 
-    // Preserve Devanagari danda punctuation exactly.
     if (char === "।" || char === "॥") {
       result += char;
       i++;
@@ -343,15 +435,13 @@ export function limbuToDevanagari(limbuText) {
     const signMatch = SIGNS.find((s) => s.limbu === char);
 
     if (signMatch) {
-      // Kemphreng is a length modifier and is consumed
-      // together with the preceding vowel.
+      // Kemphreng is consumed with the preceding vowel when possible.
       if (char === "᤺") {
         i++;
         continue;
       }
 
-      // Sa-i is the Limbu final-consonant / vowel-killer marker.
-      // It corresponds to the Devanagari halanta.
+      // Preserve the existing Sa-i behavior.
       if (char === "᤻") {
         result += "्";
         i++;
@@ -363,6 +453,7 @@ export function limbuToDevanagari(limbuText) {
       continue;
     }
 
+    // Preserve unrecognized characters.
     result += char;
     i++;
   }
